@@ -8,9 +8,9 @@ Unlike standard out-of-the-box RAG setups that fall apart on real-world data, Om
 
 ## 🏗️ Core Architecture
 
-OmniRAG isolates the database layer from the AI retrieval logic. It treats your primary database (MongoDB in the current implementation) as the source of truth, while using document-aware routing and conditional fallback mechanisms inside the vector layer (ChromaDB) to improve deterministic accuracy.
+OmniRAG isolates the database layer from the AI retrieval logic. It treats your primary database (MongoDB in the current implementations) as the source of truth, while using document-aware routing and conditional fallback mechanisms inside the vector layer (ChromaDB or Qdrant) to improve deterministic accuracy.
 
-The current implementation lives in `chromadb-rag/`. It seeds MongoDB with source policy content, ingests that content into ChromaDB with Ollama-generated embeddings, and serves a retrieval UI/API that applies keyword-sensitive Chroma `where_document` filtering before sending the final context to Claude 3.5 Sonnet or local Ollama Gemma 4 e2b.
+The current vector-backed implementations live in `chromadb-rag/` and `Qdrant-rag/`. Both seed MongoDB with source policy content, ingest that content into a vector store with Ollama-generated embeddings, and serve a retrieval UI/API before sending the final context to Claude 3.5 Sonnet or local Ollama Gemma 4 e2b. The Chroma service applies keyword-sensitive `where_document` filtering; the Qdrant service applies payload text filtering against the `content` field and falls back to semantic vector search.
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -179,7 +179,7 @@ The current implementation lives in `chromadb-rag/`. It seeds MongoDB with sourc
 
 ### Key Engineering Features:
 * **Zero-Data Alteration:** Works directly on raw, unpadded enterprise text segments.
-* **Deterministic Keyword Protection:** Uses ChromaDB document pre-filtering (`where_document` constraints) to reduce embedding drift on short-tail keywords.
+* **Deterministic Keyword Protection:** Uses vector-store document/payload pre-filtering (`where_document` in ChromaDB, payload text filters in Qdrant) to reduce embedding drift on short-tail keywords.
 * **Dynamic Failure Fallback:** Automatically drops strict constraints and shifts to pure semantic vector math if zero string matches are found—ensuring high recall.
 * **Go Backend Performance:** Lightweight, direct HTTP services with a small orchestration surface.
 
@@ -189,10 +189,11 @@ The current implementation lives in `chromadb-rag/`. It seeds MongoDB with sourc
 
 * **Language:** Go (Golang)
 * **Primary Store:** MongoDB (Source of Truth)
-* **Vector Database:** ChromaDB
+* **Vector Databases:** ChromaDB and Qdrant
 * **Embeddings Model:** `nomic-embed-text` (via Ollama)
 * **Generation Models:** Claude 3.5 Sonnet / Gemma 4 e2b
-* **Current Implementation:** `chromadb-rag/`
+* **Current ChromaDB Implementation:** `chromadb-rag/`
+* **Current Qdrant Implementation:** `Qdrant-rag/`
 * **Legacy Prototype:** `mongo-rag-beginner/`
 
 ---
@@ -233,7 +234,7 @@ MongoDB is used as the transactional content store.
   ```
 
 #### C. Install & Start ChromaDB
-ChromaDB is our dedicated vector search index.
+ChromaDB is one supported vector search index.
 - **Install Docker (If missing)**: Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/).
 - **Start ChromaDB Container (Recommended)**:
   ```bash
@@ -245,7 +246,14 @@ ChromaDB is our dedicated vector search index.
   chroma run --host localhost --port 8000
   ```
 
-#### D. Install & Configure Ollama (Local Embeddings & LLM)
+#### D. Install & Start Qdrant
+Qdrant is the second supported vector search index.
+- **Start Qdrant Container (Recommended)**:
+  ```bash
+  docker run -d -p 6333:6333 -p 6334:6334 --name qdrant qdrant/qdrant:latest
+  ```
+
+#### E. Install & Configure Ollama (Local Embeddings & LLM)
 1. Download Ollama for your OS from [ollama.com](https://ollama.com).
 2. Launch the Ollama app (confirm the status agent is active in your system menu bar).
 3. Open a terminal and pull the models:
@@ -257,7 +265,7 @@ ChromaDB is our dedicated vector search index.
    ollama pull gemma4:e2b
    ```
 
-#### E. Configure Claude (Anthropic API Key)
+#### F. Configure Claude (Anthropic API Key)
 For premium cloud response formatting:
 1. Sign up at [console.anthropic.com](https://console.anthropic.com/).
 2. Go to **API Keys** and generate a new key.
@@ -272,11 +280,16 @@ Below are the default connection coordinates used by the Go stack:
 ```text
 MongoDB URI:  mongodb://localhost:27017 (unless MONGO_URI is set)
 ChromaDB:     http://localhost:8000
+Qdrant:       http://localhost:6333
 Ollama:       http://localhost:11434
 Server Host:  http://localhost:8080
 ```
 
 ### 3. Run the Engine
+
+Choose one vector-backed implementation.
+
+#### ChromaDB service
 
 ```bash
 # From the repository root
@@ -292,6 +305,22 @@ go run ingest/main.go
 go run retrieve/main.go
 ```
 
+#### Qdrant service
+
+```bash
+# From the repository root
+cd Qdrant-rag
+
+# Seed MongoDB source content
+go run seed/main.go
+
+# Ingest MongoDB content into Qdrant
+go run ingest/main.go
+
+# Start the retrieval web server and API
+go run retrieve/main.go
+```
+
 The retrieval web server will launch immediately on `http://localhost:8080`.
 
 ---
@@ -300,7 +329,7 @@ The retrieval web server will launch immediately on `http://localhost:8080`.
 
 ### POST `/api/query`
 
-Runs query embedding, ChromaDB retrieval, prompt construction, and LLM generation.
+Runs query embedding, vector retrieval, prompt construction, and LLM generation. Both `chromadb-rag/` and `Qdrant-rag/` expose the same request and response shape.
 
 Request body:
 
@@ -362,7 +391,7 @@ Access-Control-Allow-Methods: POST, OPTIONS
 
 ### Health Checks and CLI Flags
 
-The current code does not implement a dedicated `GET /health` endpoint or CLI flags. Runtime values such as ChromaDB URL, Ollama URL, model names, and server port are currently hard-coded in the Go files.
+The current code does not implement a dedicated `GET /health` endpoint or CLI flags. Runtime values such as ChromaDB/Qdrant URL, Ollama URL, model names, and server port are currently hard-coded in the Go files.
 
 ---
 
@@ -376,6 +405,20 @@ Omni-RAG/
 ├── README_v2.md
 ├── LICENSE
 ├── chromadb-rag/
+│   ├── README.md
+│   ├── go.mod
+│   ├── go.sum
+│   ├── seed/
+│   │   └── main.go
+│   ├── ingest/
+│   │   └── main.go
+│   └── retrieve/
+│       ├── main.go
+│       └── static/
+│           ├── app.js
+│           ├── index.html
+│           └── style.css
+├── Qdrant-rag/
 │   ├── README.md
 │   ├── go.mod
 │   ├── go.sum
@@ -403,7 +446,7 @@ Omni-RAG/
             └── style.css
 ```
 
-`chromadb-rag/` is the current OmniRAG implementation. `mongo-rag-beginner/` is an earlier MongoDB-only prototype that stores embeddings directly in MongoDB and performs an in-process dot-product scan.
+`chromadb-rag/` is the ChromaDB-backed OmniRAG implementation. `Qdrant-rag/` is the Qdrant-backed implementation with payload text filtering and semantic fallback. `mongo-rag-beginner/` is an earlier MongoDB-only prototype that stores embeddings directly in MongoDB and performs an in-process dot-product scan.
 
 ---
 
