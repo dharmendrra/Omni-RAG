@@ -412,8 +412,6 @@ function handleSSEEvent(type, payload, query, card, appendText) {
       const token = payload.text || '';
       appendText(token);
       card.textEl.textContent += token;
-      // Auto-scroll
-      card.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       break;
     }
 
