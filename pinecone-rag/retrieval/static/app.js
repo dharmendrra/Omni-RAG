@@ -388,6 +388,8 @@ async function runSearch() {
     // Clear input and refocus for next query
     searchInput.value = '';
     searchInput.focus();
+    // Scroll input into view
+    searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 
