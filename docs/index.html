@@ -129,6 +129,13 @@
   pre .k { color: #7dd3fc; }
   pre .s { color: #86efac; }
 
+  /* ---------- Figure / diagram ---------- */
+  .figure { margin: 34px 0 0; }
+  .figure-frame { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); text-align: center; }
+  .figure img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  .figure figcaption { color: var(--text-faint); font-size: .86rem; margin-top: 12px; }
+  .sub { font-size: 1.25rem; font-weight: 700; margin: 52px 0 0; letter-spacing: -0.02em; }
+
   /* ---------- Stack ---------- */
   .stack { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
   .chip { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-weight: 500; font-size: .92rem; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
@@ -319,7 +326,15 @@
     <h2>The orchestration layer</h2>
     <p class="lead">Retrieval intelligence lives in Go, not in the database. A single endpoint handles embedding, adaptive filtering, fallback, context assembly, and grounded generation.</p>
 
-    <pre><span class="c">// POST /api/query  →  retrieve/main.go</span>
+    <figure class="figure">
+      <div class="figure-frame">
+        <img src="diagrams/architecture.png" alt="OmniRAG data-flow: MongoDB as source of truth feeds an ingest service that embeds content via Ollama nomic-embed-text and upserts vectors into a vector store (ChromaDB, Qdrant, or Pinecone). On the retrieval side, a search UI/JSON API hits the retrieve orchestrator on port 8080, which embeds the query, runs adaptive keyword filtering with semantic fallback against the vector store, assembles top-k context, and generates an answer via Claude or Ollama streamed back over SSE." />
+        <figcaption>End-to-end data-flow — ① ingestion into the vector store, ② adaptive retrieval and grounded generation. The vector layer is swappable: ChromaDB, Qdrant, or Pinecone.</figcaption>
+      </div>
+    </figure>
+
+    <h3 class="sub">The query path in detail</h3>
+    <pre style="margin-top:18px;"><span class="c">// POST /api/query  →  retrieve/main.go</span>
 <span class="k">1.</span> Parse request        <span class="c">{ "query": "...", "format": "prose|table|json" }</span>
 <span class="k">2.</span> Embed query          <span class="c">Ollama /api/embed · model: nomic-embed-text</span>
 <span class="k">3.</span> Adaptive filter      <span class="c">short single-token  → keyword/where_document filter</span>
