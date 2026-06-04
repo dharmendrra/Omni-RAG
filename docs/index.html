@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OmniRAG — Enterprise Go RAG Engine</title>
+<meta name="description" content="OmniRAG: a high-performance, enterprise-grade Retrieval-Augmented Generation engine in Go. Multi-vector-database orchestration over ChromaDB, Qdrant, Pinecone and MongoDB." />
+
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="OmniRAG — Enterprise Go RAG Engine" />
+<meta property="og:description" content="A production-minded, multi-vector-DB RAG engine in Go. ChromaDB · Qdrant · Pinecone · MongoDB · Ollama · Claude." />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f8fb;
+    --bg-soft: #eef2f7;
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-faint: #64748b;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px rgba(15,23,42,.06);
+    --maxw: 1080px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  section { padding: 72px 0; }
+  .section-alt { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 .4em; }
+  h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 700; }
+  .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: .78rem; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .lead { font-size: 1.12rem; color: var(--text-muted); max-width: 720px; }
+
+  /* ---------- Nav ---------- */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+  .brand { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
+  .brand span { color: var(--accent); }
+  .nav-links { display: flex; gap: 26px; align-items: center; }
+  .nav-links a { color: var(--text-muted); font-weight: 500; font-size: .94rem; }
+  .nav-links a:hover { color: var(--accent); text-decoration: none; }
+  .nav-cta { background: var(--accent); color: #fff !important; padding: 8px 16px; border-radius: 8px; font-weight: 600; }
+  .nav-cta:hover { background: var(--accent-dark); text-decoration: none; }
+  @media (max-width: 720px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 84px 0 64px; background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%); }
+  .hero h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); font-weight: 800; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .tagline { font-size: 1.2rem; color: var(--text-muted); max-width: 700px; margin-top: 8px; }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0; }
+  .pill { background: #fff; border: 1px solid var(--border); padding: 6px 14px; border-radius: 999px; font-size: .85rem; font-weight: 500; color: var(--text-muted); box-shadow: var(--shadow); }
+  .pill strong { color: var(--text); }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: .96rem; transition: .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dark); text-decoration: none; }
+  .btn-ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+  /* ---------- Author strip ---------- */
+  .author { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--border); }
+  .author .who { font-weight: 700; }
+  .author .role { color: var(--text-faint); font-size: .92rem; }
+  .author-links { display: flex; gap: 18px; margin-left: auto; }
+  .author-links a { font-weight: 500; font-size: .92rem; }
+  .ph { background: #fef9c3; border: 1px dashed #ca8a04; color: #854d0e; padding: 0 6px; border-radius: 5px; font-size: .82em; }
+
+  /* ---------- Stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { text-align: center; }
+  .stat .num { font-size: 2.2rem; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; }
+  .stat .label { color: var(--text-faint); font-size: .9rem; margin-top: 2px; }
+
+  /* ---------- Cards grid ---------- */
+  .grid { display: grid; gap: 22px; margin-top: 38px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); transition: .18s; }
+  .card:hover { transform: translateY(-3px); border-color: #cbd5e1; box-shadow: 0 10px 30px rgba(15,23,42,.10); }
+  .card h3 { font-size: 1.22rem; display: flex; align-items: center; gap: 10px; }
+  .card .badge { font-size: .72rem; font-weight: 600; padding: 3px 9px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-dark); letter-spacing: .02em; }
+  .card p { color: var(--text-muted); font-size: .96rem; margin: 0 0 14px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: .76rem; font-family: 'JetBrains Mono', monospace; background: var(--bg-soft); color: var(--text-faint); padding: 3px 9px; border-radius: 6px; }
+  .card .more { display: inline-block; margin-top: 16px; font-weight: 600; font-size: .9rem; }
+
+  /* ---------- Feature list ---------- */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 38px; }
+  @media (max-width: 860px) { .features { grid-template-columns: 1fr; } }
+  .feature h3 { font-size: 1.08rem; }
+  .feature .ic { width: 42px; height: 42px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-dark); display: grid; place-items: center; font-size: 1.3rem; margin-bottom: 14px; }
+  .feature p { color: var(--text-muted); font-size: .95rem; margin: 0; }
+
+  /* ---------- Code block ---------- */
+  pre { background: #0f172a; color: #e2e8f0; border-radius: var(--radius); padding: 22px 24px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: .85rem; line-height: 1.7; box-shadow: var(--shadow); }
+  pre .c { color: #64748b; }
+  pre .k { color: #7dd3fc; }
+  pre .s { color: #86efac; }
+
+  /* ---------- Stack ---------- */
+  .stack { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+  .chip { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-weight: 500; font-size: .92rem; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); }
+  .chip b { color: var(--accent); }
+
+  /* ---------- Roadmap ---------- */
+  .roadmap { margin-top: 34px; border-left: 2px solid var(--border); padding-left: 0; }
+  .rm-item { position: relative; padding: 0 0 26px 30px; }
+  .rm-item::before { content: ''; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid var(--border); }
+  .rm-item.done::before { background: var(--green); border-color: var(--green); }
+  .rm-item.active::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .rm-item .ver { font-weight: 700; }
+  .rm-item .st { font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-left: 8px; }
+  .rm-item.done .st { color: var(--green); }
+  .rm-item.active .st { color: var(--accent); }
+  .rm-item.todo .st { color: var(--text-faint); }
+  .rm-item p { color: var(--text-muted); font-size: .95rem; margin: 4px 0 0; }
+
+  /* ---------- CTA band ---------- */
+  .band { background: var(--accent); color: #fff; border-radius: 18px; padding: 50px 40px; text-align: center; margin-top: 10px; }
+  .band h2 { color: #fff; }
+  .band p { color: #dbeafe; max-width: 560px; margin: 0 auto 24px; }
+  .band .btn-white { background: #fff; color: var(--accent); }
+  .band .btn-white:hover { background: #f1f5f9; text-decoration: none; }
+  .band .btn-outline { border: 1px solid rgba(255,255,255,.5); color: #fff; }
+  .band .btn-outline:hover { background: rgba(255,255,255,.12); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--text-faint); font-size: .9rem; }
+  .foot-inner { display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; align-items: center; }
+  .foot-links { display: flex; gap: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ===================== NAV ===================== -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand">Omni<span>RAG</span></div>
+    <nav class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#implementations">Implementations</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#stack">Stack</a>
+      <a class="nav-cta" href="https://github.com/dharmendrra/Omni-RAG" target="_blank" rel="noopener">View on GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Enterprise Retrieval-Augmented Generation · Built in Go</div>
+    <h1>OmniRAG — a RAG engine that works <span class="accent">on top of</span> your existing data.</h1>
+    <p class="tagline">A high-performance, production-minded RAG engine that shifts retrieval intelligence to the orchestration layer — no schema migrations, no intrusive re-indexing, and equal precision on short keyword lookups and abstract semantic queries.</p>
+
+    <div class="hero-badges">
+      <span class="pill"><strong>4</strong>&nbsp;vector-DB implementations</span>
+      <span class="pill">Document-aware <strong>routing</strong></span>
+      <span class="pill">Conditional <strong>semantic fallback</strong></span>
+      <span class="pill"><strong>SSE</strong> streaming retrieval</span>
+    </div>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/dharmendrra/Omni-RAG" target="_blank" rel="noopener">⭐ Explore the code</a>
+      <a class="btn btn-ghost" href="#implementations">See the implementations →</a>
+    </div>
+
+    <div class="author">
+      <div>
+        <div class="who">Dharmendra Yadav</div>
+        <div class="role">Sr. Lead Engineer / Engineering Manager · Agentic AI Architect · Team Leadership &amp; Delivery · AI-Augmented Product Engineering</div>
+      </div>
+      <div class="author-links">
+        <a href="https://www.linkedin.com/in/dharmendra-yadav-20b9a017/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/dharmendrra" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:dharmendra.4real@gmail.com">Email</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STATS ===================== -->
+<section class="section-alt" style="padding:48px 0;">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="num">Go</div><div class="label">Single-language stack</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">Vector store backends</div></div>
+      <div class="stat"><div class="num">13+</div><div class="label">Vector DBs benchmarked</div></div>
+      <div class="stat"><div class="num">~12ms</div><div class="label">Target p99 retrieval</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== OVERVIEW ===================== -->
+<section id="overview">
+  <div class="wrap">
+    <div class="eyebrow">The Problem &amp; The Approach</div>
+    <h2>Why most RAG setups fall apart on real data</h2>
+    <p class="lead">Out-of-the-box RAG pipelines force schema migrations, intrusive backend re-indexing, and complex prompt engineering on end-users. OmniRAG isolates the database layer from the AI retrieval logic — treating your primary database (MongoDB) as the source of truth, while document-aware routing and conditional fallback inside the vector layer drive deterministic accuracy.</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="ic">🧭</div>
+        <h3>Document-aware routing</h3>
+        <p>Short single-token queries trigger keyword-sensitive filtering (Chroma <code>where_document</code>, Qdrant payload text match); abstract queries route to dense semantic search.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🪂</div>
+        <h3>Conditional fallback</h3>
+        <p>Filtered searches that return zero documents transparently retry as pure semantic vector search — no dead-ends, no empty answers.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🔌</div>
+        <h3>Pluggable generation</h3>
+        <p>Routes generation to Anthropic Claude or local Ollama based on config, with a credit-balance guard for clean, automatic fallback.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🗄️</div>
+        <h3>No data sprawl</h3>
+        <p>Your transactional store stays the source of truth. The vector layer is an additive retrieval index, not a migration target.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">⚡</div>
+        <h3>Streaming retrieval</h3>
+        <p>The Pinecone pipeline serves a Server-Sent Events (SSE) API, streaming both ingestion progress and generated answers live to the UI.</p>
+      </div>
+      <div class="feature">
+        <div class="ic">🧱</div>
+        <h3>Decoupled microservices</h3>
+        <p>Seed, ingest, and retrieve run as independent Go services — clean separation of storage, embedding, and orchestration concerns.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== IMPLEMENTATIONS ===================== -->
+<section id="implementations" class="section-alt">
+  <div class="wrap">
+    <div class="eyebrow">One pattern, four backends</div>
+    <h2>Vector-store implementations</h2>
+    <p class="lead">Each module proves the same orchestration pattern against a different class of vector store — from frictionless local prototyping to managed serverless and full PDF/book ingestion.</p>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>🟪 ChromaDB RAG <span class="badge">v1.0 · current</span></h3>
+        <p>The flagship implementation. Go orchestration over MongoDB source data with Ollama embeddings, serving a browser search UI. Applies keyword-sensitive <code>where_document</code> filtering for short queries and retries without filters when results come back empty.</p>
+        <div class="tags">
+          <span class="tag">Go</span><span class="tag">ChromaDB</span><span class="tag">MongoDB</span><span class="tag">Ollama</span><span class="tag">HNSW · cosine</span><span class="tag">Web UI</span>
+        </div>
+        <a class="more" href="https://github.com/dharmendrra/Omni-RAG/tree/main/chromadb-rag" target="_blank" rel="noopener">Browse chromadb-rag →</a>
+      </div>
+
+      <div class="card">
+        <h3>🟥 Qdrant RAG <span class="badge">microservices</span></h3>
+        <p>A highly decoupled microservices pipeline separating primary content storage from specialized vector search. Applies payload text filtering against the <code>content</code> field, then falls back to semantic vector search — leaning on Qdrant's in-graph filtering for low p99 latency.</p>
+        <div class="tags">
+          <span class="tag">Go</span><span class="tag">Qdrant (Rust)</span><span class="tag">MongoDB</span><span class="tag">Ollama</span><span class="tag">Claude</span><span class="tag">gRPC-ready</span>
+        </div>
+        <a class="more" href="https://github.com/dharmendrra/Omni-RAG/tree/main/Qdrant-rag" target="_blank" rel="noopener">Browse Qdrant-rag →</a>
+      </div>
+
+      <div class="card">
+        <h3>🟦 Pinecone RAG <span class="badge">PDFs · books · SSE</span></h3>
+        <p>Extends the pattern to full PDF/book content. Stores raw PDFs in MongoDB GridFS, extracts text page-by-page, chunks with LangChainGo, embeds concurrently via Ollama, and upserts to Pinecone — streaming live ingestion and answer generation over SSE with a credit-balance guard.</p>
+        <div class="tags">
+          <span class="tag">Go</span><span class="tag">Pinecone</span><span class="tag">GridFS</span><span class="tag">LangChainGo</span><span class="tag">SSE</span><span class="tag">Tailwind UI</span>
+        </div>
+        <a class="more" href="https://github.com/dharmendrra/Omni-RAG/tree/main/pinecone-rag" target="_blank" rel="noopener">Browse pinecone-rag →</a>
+      </div>
+
+      <div class="card">
+        <h3>🟩 MongoDB RAG <span class="badge">foundations</span></h3>
+        <p>The modular starting point — a clean ingest/retrieve microservices split using MongoDB itself as the knowledge store, with local Ollama embeddings, Claude/Ollama generation, and configurable Prose / Table / JSON output formatting.</p>
+        <div class="tags">
+          <span class="tag">Go</span><span class="tag">MongoDB</span><span class="tag">Ollama</span><span class="tag">Claude</span><span class="tag">Search UI</span>
+        </div>
+        <a class="more" href="https://github.com/dharmendrra/Omni-RAG/tree/main/mongo-rag-beginner" target="_blank" rel="noopener">Browse mongo-rag-beginner →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ARCHITECTURE ===================== -->
+<section id="architecture">
+  <div class="wrap">
+    <div class="eyebrow">How a query flows</div>
+    <h2>The orchestration layer</h2>
+    <p class="lead">Retrieval intelligence lives in Go, not in the database. A single endpoint handles embedding, adaptive filtering, fallback, context assembly, and grounded generation.</p>
+
+    <pre><span class="c">// POST /api/query  →  retrieve/main.go</span>
+<span class="k">1.</span> Parse request        <span class="c">{ "query": "...", "format": "prose|table|json" }</span>
+<span class="k">2.</span> Embed query          <span class="c">Ollama /api/embed · model: nomic-embed-text</span>
+<span class="k">3.</span> Adaptive filter      <span class="c">short single-token  → keyword/where_document filter</span>
+                          <span class="c">abstract/semantic   → dense vector search</span>
+<span class="k">4.</span> Fallback             <span class="c">filtered result empty → retry as pure semantic</span>
+<span class="k">5.</span> Assemble context     <span class="c">merge top results into one grounded block</span>
+<span class="k">6.</span> Generate             <span class="c">route → Claude  |  Ollama (Gemma)</span>
+                          <span class="c">credit-balance guard → clean fallback</span>
+<span class="k">7.</span> Stream answer        <span class="c">Server-Sent Events → UI</span></pre>
+
+    <div class="grid grid-2" style="margin-top:28px;">
+      <div class="card">
+        <h3>Ingestion path</h3>
+        <p>Seed services load policy/source content into MongoDB. Ingest services read it back, generate embeddings through Ollama, and upsert vectors + payloads into the chosen store with cosine-space HNSW indexes (or page-by-page PDF chunks for Pinecone).</p>
+      </div>
+      <div class="card">
+        <h3>Retrieval path</h3>
+        <p>A Go HTTP server embeds the incoming query, runs adaptive filtered-or-semantic search, builds a grounded prompt in the requested output format, and routes generation to Claude or local Ollama — all behind a clean web UI and JSON API.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STACK ===================== -->
+<section id="stack" class="section-alt">
+  <div class="wrap">
+    <div class="eyebrow">Engineering surface area</div>
+    <h2>Technology stack</h2>
+    <p class="lead">A deliberately Go-centric stack spanning transactional storage, four vector engines, local + hosted LLMs, and streaming delivery.</p>
+    <div class="stack">
+      <span class="chip"><b>●</b> Go</span>
+      <span class="chip"><b>●</b> MongoDB + GridFS</span>
+      <span class="chip"><b>●</b> ChromaDB</span>
+      <span class="chip"><b>●</b> Qdrant</span>
+      <span class="chip"><b>●</b> Pinecone</span>
+      <span class="chip"><b>●</b> Ollama · nomic-embed-text</span>
+      <span class="chip"><b>●</b> Ollama · Gemma / Llama 3</span>
+      <span class="chip"><b>●</b> Anthropic Claude</span>
+      <span class="chip"><b>●</b> LangChainGo</span>
+      <span class="chip"><b>●</b> HNSW · cosine</span>
+      <span class="chip"><b>●</b> Server-Sent Events</span>
+      <span class="chip"><b>●</b> Vanilla JS + Tailwind UIs</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ROADMAP ===================== -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="eyebrow">Where it's going</div>
+    <h2>Engineering roadmap</h2>
+    <p class="lead">OmniRAG is evolving from a single-node retrieval pipeline into a distributed, multi-agent framework.</p>
+    <div class="roadmap">
+      <div class="rm-item done">
+        <span class="ver">v1.0.0</span><span class="st">Shipped</span>
+        <p>Go + ChromaDB metadata optimization layer, fixing short-query vector bias.</p>
+      </div>
+      <div class="rm-item active">
+        <span class="ver">v1.1.0</span><span class="st">In progress</span>
+        <p>Abstracted multi-vector-DB client interface supporting Qdrant and Milvus.</p>
+      </div>
+      <div class="rm-item todo">
+        <span class="ver">v1.2.0</span><span class="st">Planned</span>
+        <p>Horizontally scalable ingestion worker pools for heavy concurrent document parsing.</p>
+      </div>
+      <div class="rm-item todo">
+        <span class="ver">v2.0.0</span><span class="st">Planned</span>
+        <p>LangChain &amp; LangGraph integration for autonomous, stateful multi-agent workflows and graph-based context retrieval.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CTA BAND ===================== -->
+<section style="padding-bottom:80px;">
+  <div class="wrap">
+    <div class="band">
+      <h2>Dig into the engineering</h2>
+      <p>Full source, per-module READMEs, data-flow diagrams, and a vector-database decision matrix covering 13+ engines live in the repository.</p>
+      <div class="hero-cta" style="justify-content:center;">
+        <a class="btn btn-white" href="https://github.com/dharmendrra/Omni-RAG" target="_blank" rel="noopener">View OmniRAG on GitHub</a>
+        <a class="btn btn-outline" href="mailto:dharmendra.4real@gmail.com">Get in touch</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="wrap foot-inner">
+    <div>© <span id="year"></span> Dharmendra Yadav · OmniRAG · MIT License</div>
+    <div class="foot-links">
+      <a href="https://github.com/dharmendrra/Omni-RAG" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.linkedin.com/in/dharmendra-yadav-20b9a017/" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="mailto:dharmendra.4real@gmail.com">Email</a>
+    </div>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
